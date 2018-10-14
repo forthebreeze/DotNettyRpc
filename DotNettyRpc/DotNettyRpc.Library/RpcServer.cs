@@ -3,9 +3,11 @@
     using System;
     using System.Net;
     using System.Threading.Tasks;
+    using DotNetty.Codecs.Protobuf;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
+    using Google.Protobuf;
 
     public class RpcServer
     {
@@ -35,9 +37,11 @@
                     .ChildHandler(new ActionChannelInitializer<IChannel>(channel =>
                     {
                         IChannelPipeline pipeline = channel.Pipeline;
-                        pipeline.AddLast(new ResponseEncoder());
-                        pipeline.AddLast(new RequestDecoder());
-                        pipeline.AddLast(new RequestHandler());
+                        pipeline.AddLast(new ProtobufVarint32FrameDecoder())
+                                .AddLast(new ProtobufDecoder(Request.Parser))
+                                .AddLast(new ProtobufVarint32LengthFieldPrepender())
+                                .AddLast(new ProtobufEncoder())
+                                .AddLast(new RequestHandler());
                     }));
 
                 IChannel bootstrapChannel = await bootstrap.BindAsync(IPAddress.Any, _port);
