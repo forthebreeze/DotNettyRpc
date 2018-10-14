@@ -3,6 +3,7 @@
     using System;
     using System.Net;
     using System.Threading.Tasks;
+    using DotNetty.Codecs.Protobuf;
     using DotNetty.Transport.Bootstrapping;
     using DotNetty.Transport.Channels;
     using DotNetty.Transport.Channels.Sockets;
@@ -46,8 +47,10 @@
             _bootstrap.Handler(new ActionChannelInitializer<IChannel>(channel =>
             {
                 IChannelPipeline pipeline = channel.Pipeline;
-                pipeline.AddLast(new RequestEncoder())
-                .AddLast(new ResponseDecoder())
+                pipeline.AddLast(new ProtobufVarint32LengthFieldPrepender())
+                .AddLast(new ProtobufEncoder())
+                .AddLast(new ProtobufVarint32FrameDecoder())
+                .AddLast(new ProtobufDecoder(Response.Parser))
                 .AddLast(new ResponseHandler(Callback));
             }));
 
